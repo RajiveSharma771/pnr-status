@@ -1,0 +1,41 @@
+name: PNR Check
+
+on:
+  schedule:
+    - cron: "00 01 * * *"   # every 4 hours (UTC), i.e. 06:00, 10:00, 14:00... IST
+  workflow_dispatch:          # lets you run it manually
+
+permissions:
+  contents: write             # needed to save state.json
+
+concurrency: pnr-check
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install requests
+
+      - name: Check PNR
+        run: python check_pnr.py
+        env:
+          PNR: ${{ secrets.PNR }}
+          API_URL: ${{ secrets.API_URL }}
+          API_HOST: ${{ secrets.API_HOST }}
+          API_KEY: ${{ secrets.API_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+
+      - name: Save state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add state.json
+          git diff --staged --quiet || (git commit -m "Update PNR state" && git push)
