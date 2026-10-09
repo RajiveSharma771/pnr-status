@@ -2,7 +2,7 @@ name: PNR Check
 
 on:
   schedule:
-    - cron: "00 01 * * *"   # every 4 hours (UTC), i.e. 06:00, 10:00, 14:00... IST
+    - cron: "30 */4 * * *"   # every 4 hours (UTC), i.e. 06:00, 10:00, 14:00... IST
   workflow_dispatch:          # lets you run it manually
 
 permissions:
