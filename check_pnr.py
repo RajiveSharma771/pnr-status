@@ -2,7 +2,8 @@ import json, os, smtplib, requests
 from email.message import EmailMessage
 
 PNR = os.environ["PNR"].strip()
-STATE_FILE = "state.json"
+STATE_FILE = os.environ.get("STATE_FILE", "state.json")
+LABEL = os.environ.get("LABEL", "PNR")
 
 
 def fetch_status():
@@ -19,7 +20,6 @@ def fetch_status():
     body = r.json()
     if not body.get("success"):
         raise RuntimeError("API returned success=false")
-
     d = body["data"]
     return {
         "train": f"{d['trainNumber']} {d['trainName']}",
@@ -47,17 +47,22 @@ def send_mail(subject, body):
 
 
 new = fetch_status()
-old = json.load(open(STATE_FILE)) if os.path.exists(STATE_FILE) else None
+old = None
+if os.path.exists(STATE_FILE):
+    try:
+        old = json.load(open(STATE_FILE))
+        if "passengers" not in old:
+            old = None
+    except ValueError:
+        old = None
 
 summary = "\n".join(f"Passenger {k}: {v}" for k, v in new["passengers"].items())
 header = f"{new['train']} | Journey: {new['date']}"
+tag = f"[{LABEL}]"
 
 if old is None:
-    send_mail(
-        "PNR tracking started",
-        f"{header}\nChart: {new['chart']}\n\n{summary}",
-    )
-    print("First run, tracking started")
+    send_mail(f"{tag} PNR tracking started", f"{header}\nChart: {new['chart']}\n\n{summary}")
+    print(f"{tag} first run, tracking started")
 else:
     lines = []
     for k, v in new["passengers"].items():
@@ -66,14 +71,13 @@ else:
             lines.append(f"Passenger {k}: {before} -> {v}")
     if old["chart"] != new["chart"]:
         lines.append(f"Chart: {old['chart']} -> {new['chart']}")
-
     if lines:
         send_mail(
-            "PNR status changed",
+            f"{tag} PNR status changed",
             f"{header}\n\n" + "\n".join(lines) + f"\n\nCurrent:\n{summary}",
         )
-        print("Change detected, mail sent")
+        print(f"{tag} change detected, mail sent")
     else:
-        print("No change")
+        print(f"{tag} no change")
 
 json.dump(new, open(STATE_FILE, "w"), indent=2)
