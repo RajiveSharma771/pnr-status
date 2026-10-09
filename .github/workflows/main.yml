@@ -2,11 +2,11 @@ name: PNR Check
 
 on:
   schedule:
-    - cron: "30 */4 * * *"   # every 4 hours (UTC), i.e. 06:00, 10:00, 14:00... IST
-  workflow_dispatch:          # lets you run it manually
+    - cron: "00 1 * * *"
+  workflow_dispatch:
 
 permissions:
-  contents: write             # needed to save state.json
+  contents: write
 
 concurrency: pnr-check
 
@@ -22,20 +22,37 @@ jobs:
 
       - run: pip install requests
 
-      - name: Check PNR
+      - name: Check PNR 1
         run: python check_pnr.py
         env:
-          PNR: ${{ secrets.PNR }}
-          API_URL: ${{ secrets.API_URL }}
-          API_HOST: ${{ secrets.API_HOST }}
+          LABEL: "Train 1"
+          STATE_FILE: state_1.json
+          PNR: ${{ secrets.PNR_1 }}
+          API_URL: ${{ secrets.API_URL_1 }}
+          API_HOST: ${{ secrets.API_HOST_1 }}
+          API_KEY: ${{ secrets.API_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+
+      - name: Check PNR 2
+        if: always()
+        run: python check_pnr.py
+        env:
+          LABEL: "Train 2"
+          STATE_FILE: state_2.json
+          PNR: ${{ secrets.PNR_2 }}
+          API_URL: ${{ secrets.API_URL_2 }}
+          API_HOST: ${{ secrets.API_HOST_2 }}
           API_KEY: ${{ secrets.API_KEY }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
 
       - name: Save state
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add state.json
+          git add state_*.json
           git diff --staged --quiet || (git commit -m "Update PNR state" && git push)
