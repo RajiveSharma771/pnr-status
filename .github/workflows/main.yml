@@ -2,7 +2,9 @@ name: PNR Check
 
 on:
   schedule:
-    - cron: "00 01 * * *"
+    - cron: "30 6,10 10-13 10 *"   # Oct 10-13: 12:00 PM and 4:00 PM IST
+    - cron: "30 4-12 14 10 *"      # Oct 14: hourly, 10:30 AM to 6:30 PM IST
+    - cron: "30 5,9,12 15 10 *"    # Oct 15: 11:00 AM, 3:00 PM, 6:00 PM IST
   workflow_dispatch:
 
 permissions:
