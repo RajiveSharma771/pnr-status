@@ -1,9 +1,6 @@
 name: PNR Check
 
 on:
-  schedule:
-    - cron: "30 4-12 13,14 10 *"
-    - cron: "30 4-6 15 10 *" # Oct 13 and 14, hourly 10:00 AM to 8:00 PM IST
   workflow_dispatch:
 
 permissions:
